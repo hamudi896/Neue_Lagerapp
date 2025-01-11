@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="text-center">Benutzerverwaltung</h2>
+
+    <!-- Button to add a new user -->
+    <a href="{{ url_for('add_user') }}" class="btn btn-success mb-3">Neuen Benutzer hinzufügen</a>
+
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Email</th>
+                <th>Rolle</th>
+                <th>Aktionen</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users %}
+            <tr>
+                <td>{{ user.id }}</td>
+                <td>{{ user.email }}</td>
+                <td>{{ user.role }}</td>
+                <td>
+                    <form method="POST" action="{{ url_for('manage_users') }}" class="d-inline">
+                        <input type="hidden" name="user_id" value="{{ user.id }}">
+                        <input type="email" name="email" value="{{ user.email }}" required>
+                        <input type="password" name="password" placeholder="Neues Passwort">
+                        <select name="role" required>
+                            <option value="user" {% if user.role == 'user' %}selected{% endif %}>User</option>
+                            <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>Admin</option>
+                        </select>
+                        <button type="submit" class="btn btn-primary btn-sm">Ändern</button>
+                    </form>
+                    <form method="POST" action="{{ url_for('delete_user', user_id=user.id) }}" class="d-inline">
+                        <button type="submit" class="btn btn-danger btn-sm">Löschen</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

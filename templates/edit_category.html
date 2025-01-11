@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1>Warengruppe bearbeiten</h1>
+    <form method="POST">
+        <div class="mb-3">
+            <label for="name" class="form-label">Name der Warengruppe</label>
+            <input type="text" id="name" name="name" class="form-control" value="{{ category.name }}" required>
+        </div>
+        <button type="submit" class="btn btn-success">Speichern</button>
+        <a href="/categories" class="btn btn-secondary">Abbrechen</a>
+    </form>
+</div>
+{% endblock %}

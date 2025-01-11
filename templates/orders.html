@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1>Bestellungen</h1>
+
+    <!-- Formular für neue Bestellungen -->
+    <h2>Neue Bestellung</h2>
+    <form method="POST" action="/orders" class="mb-4">
+        <div class="row">
+            <div class="col-md-3">
+                <input type="text" name="order_number" placeholder="Bestellnummer" class="form-control" required>
+            </div>
+            <div class="col-md-3">
+                <input type="date" name="order_date" class="form-control" required>
+            </div>
+            <div class="col-md-3">
+                <input type="text" name="location" placeholder="Ort" class="form-control" required>
+            </div>
+            <div class="col-md-3">
+                <textarea name="order_details" placeholder="Details" class="form-control" rows="2" required></textarea>
+            </div>
+        </div>
+        <button type="submit" class="btn btn-success mt-3">Bestellung hinzufügen</button>
+    </form>
+
+    <!-- Offene Bestellungen -->
+    <h2>Offene Bestellungen</h2>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Bestellnummer</th>
+                <th>Datum</th>
+                <th>Ort</th>
+                <th>Details</th>
+                <th>Info</th> <!-- Geändert von "Status" zu "Info" -->
+                <th>Aktionen</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for order in open_orders %}
+            <tr>
+                <td>{{ order.order_number }}</td>
+                <td>{{ order.order_date }}</td>
+                <td>{{ order.location }}</td>
+                <td>{{ order.order_details }}</td>
+                <td>{{ order.info }}</td> <!-- Geändert von "status" zu "info" -->
+                <td>
+                    <!-- Geliefert -->
+                    <button class="btn btn-success btn-sm" 
+                            data-id="{{ order.id }}" 
+                            onclick="openDeliverModal(this)">Geliefert</button>
+
+                    <!-- Stornieren -->
+                    <button class="btn btn-warning btn-sm" 
+                            data-id="{{ order.id }}" 
+                            onclick="openCancelModal(this)">Stornieren</button>
+
+                    <!-- Info aktualisieren -->
+                    <button class="btn btn-info btn-sm" 
+                            data-id="{{ order.id }}" 
+                            data-info="{{ order.info | safe }}" 
+                            onclick="openInfoModal(this)">Info aktualisieren</button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Archivierte Bestellungen -->
+    <h2>Archivierte Bestellungen</h2>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Bestellnummer</th>
+                <th>Datum</th>
+                <th>Ort</th>
+                <th>Details</th>
+                <th>Status</th> <!-- Archivierte behalten "Status" -->
+            </tr>
+        </thead>
+        <tbody>
+            {% for order in archived_orders %}
+            <tr>
+                <td>{{ order.order_number }}</td>
+                <td>{{ order.order_date }}</td>
+                <td>{{ order.location }}</td>
+                <td>{{ order.order_details }}</td>
+                <td>{{ order.status }}</td> <!-- Keine Änderung -->
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Modal: Geliefert -->
+    <div id="deliverModal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <h2>Als geliefert markieren</h2>
+            <form method="POST">
+                <label for="deliveryDate">Lieferdatum:</label>
+                <input type="date" id="deliveryDate" name="delivery_date" required><br>
+                <button type="submit">Speichern</button>
+                <button type="button" onclick="closeModal('deliverModal')">Abbrechen</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Stornieren -->
+    <div id="cancelModal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <h2>Bestellung stornieren</h2>
+            <form method="POST">
+                <label for="cancelReason">Stornierungsgrund:</label>
+                <textarea id="cancelReason" name="cancel_reason" rows="3" required></textarea><br>
+                <button type="submit">Speichern</button>
+                <button type="button" onclick="closeModal('cancelModal')">Abbrechen</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Info aktualisieren -->
+    <div id="infoModal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <h2>Info aktualisieren</h2>
+            <form method="POST">
+                <label for="info">Neue Info:</label>
+                <textarea id="info" name="info" rows="3" required></textarea><br>
+                <button type="submit">Speichern</button>
+                <button type="button" onclick="closeModal('infoModal')">Abbrechen</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function openDeliverModal(button) {
+            const orderId = button.dataset.id;
+            const form = document.querySelector('#deliverModal form');
+            form.action = `/orders/${orderId}/deliver`;
+            document.querySelector('#deliverModal').style.display = 'block';
+        }
+
+        function openCancelModal(button) {
+            const orderId = button.dataset.id;
+            const form = document.querySelector('#cancelModal form');
+            form.action = `/orders/${orderId}/cancel`;
+            document.querySelector('#cancelModal').style.display = 'block';
+        }
+
+        function openInfoModal(button) {
+            const orderId = button.dataset.id;
+            const info = button.dataset.info || "";
+            const form = document.querySelector('#infoModal form');
+            const infoField = document.querySelector('#infoModal textarea');
+            form.action = `/orders/${orderId}/update_info`;
+            infoField.value = info;
+            document.querySelector('#infoModal').style.display = 'block';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+    </script>
+</div>
+{% endblock %}

@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 class="text-center text-primary">Shops</h1>
+    <form method="POST" class="mb-3">
+        <input type="text" name="name" placeholder="Name des Shops" class="form-control" required>
+        <button type="submit" class="btn btn-success mt-2">Shop hinzufügen</button>
+    </form>
+    <table class="table table-striped">
+        <thead style="background-color: #007bff; color: white;">
+            <tr>
+                <th>Shopname</th>
+                <th>Aktionen</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for shop in shops %}
+            <tr id="shop-row-{{ shop.id }}">
+                <td>{{ shop.name }}</td>
+                <td>
+                    <a href="/shops/{{ shop.id }}" class="btn btn-info btn-sm">Bestände ansehen</a>
+                    <button class="btn btn-danger btn-sm delete-shop" data-shop-id="{{ shop.id }}">Löschen</button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+    // Sobald das DOM geladen ist
+    document.addEventListener('DOMContentLoaded', function() {
+        const deleteButtons = document.querySelectorAll('.delete-shop'); // Alle Löschen-Buttons abrufen
+
+        deleteButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const shopId = this.getAttribute('data-shop-id'); // Shop-ID aus Button-Daten abrufen
+                if (confirm('Möchten Sie diesen Shop wirklich löschen?')) {
+                    fetch(`/shops/delete/${shopId}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' }
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Fehler beim Löschen.');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.success) {
+                            // Entferne die Shop-Zeile aus der Tabelle
+                            const shopRow = document.getElementById(`shop-row-${shopId}`);
+                            shopRow.remove();
+                            alert('Shop erfolgreich gelöscht');
+                        } else {
+                            alert('Fehler: ' + data.error);
+                        }
+                    })
+                    .catch(error => alert('Fehler: ' + error.message));
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 class="text-center text-primary">Dashboard: Bestände aller Shops</h1>
+
+    <!-- Button zum Exportieren der Daten -->
+    <a href="{{ url_for('export_dashboard') }}" class="btn btn-success mb-3">Daten als Excel herunterladen</a>
+
+    <table class="table table-bordered table-striped">
+        <thead style="background-color: #007bff; color: white;">
+            <tr>
+                <th style="text-align: left;">Warengruppe / Artikel</th> <!-- Warengruppe / Artikel Überschrift linksbündig -->
+                {% for shop in shops %}
+                <th style="text-align: center;">{{ shop.name }}</th> <!-- Shops zentriert -->
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for category, items in matrix.items() %}
+            <tr style="background-color: #f1f1f1;">  <!-- Warengruppe-Zeile -->
+                <td colspan="{{ shops|length + 1 }}" class="table-secondary" style="text-align: left;">
+                    <strong>{{ category }}</strong>
+                </td>
+            </tr>
+            {% for item_name, shop_data in items.items() %}
+            <tr>
+                <td style="text-align: left; padding-left: 30px;">{{ item_name }}</td>  <!-- Artikelname linksbündig -->
+                {% for shop in shops %}
+                <td style="text-align: center;">{{ shop_data[shop.name] }}</td>  <!-- Bestände pro Shop zentriert -->
+                {% endfor %}
+            </tr>
+            {% endfor %}
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <a href="/" class="btn btn-secondary mt-3">Zurück zur Startseite</a>
+</div>
+{% endblock %}

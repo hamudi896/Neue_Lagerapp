@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1>Bestände - {{ shop.name }}</h1>
+    {% for category, items in items_grouped.items() %}
+    <div class="category">
+        <h3 class="category-title">
+            <i class="fas fa-chevron-down"></i> {{ category }}
+        </h3>
+        <div class="category-items" style="display: none;">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Artikel</th>
+                        <th>Bestand</th>
+                        <th>Aktionen</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item_info in items %}
+                    <tr>
+                        <td>{{ item_info.item.name }}</td>
+                        <td id="stock-{{ item_info.item.id }}">{{ item_info.quantity }}</td>
+                        <td>
+                            <button class="btn btn-primary btn-sm output-popup-btn" 
+                                    data-item-id="{{ item_info.item.id }}"
+                                    data-shop-id="{{ shop.id }}"
+                                    data-category-name="{{ category }}"
+                                    data-item-name="{{ item_info.item.name }}">
+                                Ausgabe
+                            </button>
+                            <button class="btn btn-success btn-sm add-stock" 
+                                    data-item-id="{{ item_info.item.id }}"
+                                    data-shop-id="{{ shop.id }}">
+                                Wareneingang
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endfor %}
+    <a href="/shops" class="btn btn-secondary mt-3">Zurück</a>
+</div>
+{% endblock %}

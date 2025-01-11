@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Meine App{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        /* Navigationslinks in Weiß */
+        .navbar-dark .nav-link {
+            color: white !important;
+        }
+
+        .navbar-dark .nav-link:hover {
+            color: #dcdcdc !important; /* Optional: Helleres Weiß beim Hover */
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Navigation umschalten">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/"><i class="fas fa-home"></i> Home</a>
+                    </li>
+                    {% if current_user.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="/shops"><i class="fas fa-store"></i> Shops</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/categories"><i class="fas fa-th-list"></i> Warengruppen</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/items"><i class="fas fa-box"></i> Artikel</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/orders"><i class="fas fa-receipt"></i> Bestellungen</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/dashboard"><i class="fas fa-chart-line"></i> Dashboard</a>
+                        </li>
+                        {% if current_user.role == 'admin' %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="/admin/users"><i class="fas fa-users-cog"></i> Manage Users</a>
+                            </li>
+                        {% endif %}
+                    {% endif %}
+                </ul>
+                <ul class="navbar-nav ms-auto">
+                    {% if current_user.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('login') }}"><i class="fas fa-sign-in-alt"></i> Login</a>
+                        </li>
+                     
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hauptinhalt -->
+    <div class="container mt-4">
+        {% block content %}
+        {% endblock %}
+    </div>
+
+    <!-- Ausgabe-Popup -->
+    <div class="modal fade" id="outputModal" tabindex="-1" aria-labelledby="outputModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="outputModalLabel">Artikel-Ausgabe bestätigen</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+                </div>
+                <div class="modal-body">
+                    Sind Sie sicher, dass Sie <strong><span id="modalCategoryName"></span></strong> - <strong><span id="modalItemName"></span></strong> ausgeben möchten?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Nein</button>
+                    <button type="button" class="btn btn-primary" id="confirmOutput">Ja</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JavaScript Bundle mit Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Custom JavaScript -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Navigation Funktion - Sicherstellen, dass keine Konflikte auftreten
+            (function initNavigation() {
+                const navCollapse = document.getElementById('navbarNav');
+                const navToggler = document.querySelector('.navbar-toggler');
+                if (navCollapse && navToggler) {
+                    navToggler.addEventListener('click', () => {
+                        navCollapse.classList.toggle('show');
+                    });
+
+                    document.querySelectorAll('.nav-link').forEach(link => {
+                        link.addEventListener('click', () => {
+                            if (window.innerWidth < 992) {
+                                navCollapse.classList.remove('show');
+                            }
+                        });
+                    });
+                }
+            })();
+
+            // Ausgabe Modal
+            (function initOutputModal() {
+                const outputModal = new bootstrap.Modal(document.getElementById('outputModal'));
+                const modalCategoryName = document.getElementById('modalCategoryName');
+                const modalItemName = document.getElementById('modalItemName');
+                const confirmOutputBtn = document.getElementById('confirmOutput');
+                let selectedItemId = null;
+                let selectedShopId = null;
+
+                document.querySelectorAll('.output-popup-btn').forEach(button => {
+                    button.addEventListener('click', function () {
+                        selectedItemId = this.dataset.itemId;
+                        selectedShopId = this.dataset.shopId;
+                        modalCategoryName.textContent = this.dataset.categoryName;
+                        modalItemName.textContent = this.dataset.itemName;
+                        outputModal.show();
+                    });
+                });
+
+                confirmOutputBtn.addEventListener('click', function () {
+                    if (selectedItemId && selectedShopId) {
+                        fetch('/shops/adjust_stock', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                item_id: selectedItemId,
+                                adjustment: -1,
+                                shop_id: selectedShopId
+                            })
+                        })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.new_quantity !== undefined) {
+                                    document.getElementById(`stock-${selectedItemId}`).innerText = data.new_quantity;
+                                    outputModal.hide();
+                                } else {
+                                    alert('Fehler: ' + data.error);
+                                }
+                            })
+                            .catch(() => alert('Fehler beim Aktualisieren des Bestands.'));
+                    }
+                });
+            })();
+
+            // Wareneingang
+            (function initStockInput() {
+                document.querySelectorAll('.add-stock').forEach(button => {
+                    button.addEventListener('click', function () {
+                        const itemId = this.dataset.itemId;
+                        const shopId = this.dataset.shopId;
+                        const newQuantity = prompt('Bitte geben Sie die Menge ein:');
+
+                        if (newQuantity !== null && !isNaN(newQuantity) && newQuantity.trim() !== '') {
+                            fetch('/shops/add_stock', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    item_id: itemId,
+                                    adjustment: parseInt(newQuantity),
+                                    shop_id: shopId
+                                })
+                            })
+                                .then(response => response.json())
+                                .then(data => {
+                                    if (data.new_quantity !== undefined) {
+                                        document.getElementById(`stock-${itemId}`).innerText = data.new_quantity;
+                                    } else {
+                                        alert('Fehler: ' + data.error);
+                                    }
+                                })
+                                .catch(() => alert('Fehler beim Aktualisieren des Bestands.'));
+                        }
+                    });
+                });
+            })();
+
+            // Kategorien Expandieren und Minimieren
+            (function initCategoryToggle() {
+                document.querySelectorAll('.category-title').forEach(title => {
+                    title.addEventListener('click', function () {
+                        const items = this.nextElementSibling;
+                        const icon = this.querySelector('i');
+
+                        if (items.style.display === "none" || !items.style.display) {
+                            items.style.display = "block";
+                            icon.classList.remove('fa-chevron-down');
+                            icon.classList.add('fa-chevron-up');
+                        } else {
+                            items.style.display = "none";
+                            icon.classList.remove('fa-chevron-up');
+                            icon.classList.add('fa-chevron-down');
+                        }
+                    });
+                });
+            })();
+        });
+    </script>
+</body>
+</html>
